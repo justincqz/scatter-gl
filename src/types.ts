@@ -24,6 +24,17 @@ export const enum InteractionMode {
   SELECT = 'SELECT',
 }
 
+export const enum SelectionMode {
+  BOX = 'BOX',
+  POLYGON = 'POLYGON',
+}
+
+export const enum MouseButton {
+  LEFT = 0,
+  MIDDLE = 1,
+  RIGHT = 2,
+}
+
 export const enum RenderMode {
   POINT = 'POINT',
   TEXT = 'TEXT',

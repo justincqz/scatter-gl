@@ -20,7 +20,14 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
 import {CameraType, LabelRenderParams, RenderContext} from './render';
 import {Styles} from './styles';
-import {Optional, Point2D, Point3D, InteractionMode} from './types';
+import {
+  Optional,
+  Point2D,
+  Point3D,
+  InteractionMode,
+  SelectionMode,
+  MouseButton,
+} from './types';
 import * as util from './util';
 
 import {ScatterPlotVisualizer} from './scatter_plot_visualizer';
@@ -28,6 +35,10 @@ import {
   ScatterBoundingBox,
   ScatterPlotRectangleSelector,
 } from './scatter_plot_rectangle_selector';
+import {
+  ScatterPolygonTrace,
+  ScatterPlotPolygonSelector,
+} from './scatter_plot_polygon_selector';
 
 /**
  * The length of the cube (diameter of the circumscribing sphere) where all the
@@ -115,6 +126,7 @@ export class ScatterPlot {
   private dimensions = 3;
 
   private interactionMode = InteractionMode.PAN;
+  private selectionMode = SelectionMode.POLYGON;
 
   private renderer: THREE.WebGLRenderer;
 
@@ -135,17 +147,21 @@ export class ScatterPlot {
   private polylineOpacities = new Float32Array(0);
   private polylineWidths = new Float32Array(0);
 
+  private cameraParams: CameraParams = {};
   private selecting = false;
   private nearestPoint: number | null = null;
   private mouseIsDown = false;
   private isDragSequence = false;
+  private isSelectSequence = false;
   private rectangleSelector: ScatterPlotRectangleSelector;
+  private polygonSelector: ScatterPlotPolygonSelector;
 
   private readonly orbitControlParams: OrbitControlParams;
 
   constructor(containerElement: HTMLElement, params: ScatterPlotParams) {
     this.container = containerElement;
     this.styles = params.styles;
+    this.cameraParams = params.camera || {};
     this.setParameters(params);
 
     this.computeLayoutValues();
@@ -173,9 +189,16 @@ export class ScatterPlot {
       },
       this.styles
     );
+    this.polygonSelector = new ScatterPlotPolygonSelector(
+      this.container,
+      (polygon: ScatterPolygonTrace) => {
+        this.selectPolygonTrace(polygon);
+      },
+      this.styles
+    );
     this.addInteractionListeners();
     this.setDimensions(3);
-    this.makeCamera(params.camera);
+    this.makeCamera(this.cameraParams);
     this.resize();
   }
 
@@ -205,7 +228,7 @@ export class ScatterPlot {
       );
     });
 
-    // Change is called everytime the user interacts with the controls.
+    // Change is called everytime the user interacts with the controls.f
     cameraControls.addEventListener('change', () => {
       this.render();
     });
@@ -363,12 +386,23 @@ export class ScatterPlot {
     }
   }
 
-  setInteractionMode(interactionMode: InteractionMode) {
+  setInteractionMode(
+    interactionMode: InteractionMode,
+    selectionMode?: SelectionMode
+  ) {
     this.interactionMode = interactionMode;
+
+    /** Resets the Polygon Selector UI */
+    this.isSelectSequence = false;
+    this.polygonSelector.resetSVG();
+
     if (interactionMode === InteractionMode.SELECT) {
       this.selecting = true;
       this.container.style.cursor = 'crosshair';
       this.orbitCameraControls.enabled = false;
+      if (selectionMode) {
+        this.selectionMode = selectionMode;
+      }
     } else {
       this.selecting = false;
       this.container.style.cursor = 'default';
@@ -377,7 +411,18 @@ export class ScatterPlot {
   }
 
   private onClick(e: MouseEvent | null, notify = true) {
-    if (e && this.selecting) {
+    if (this.selecting && this.selectionMode === SelectionMode.POLYGON) {
+      if (e === null) return;
+      e.preventDefault();
+      if (e.button === MouseButton.LEFT) {
+        this.polygonSelector.onLeftMouseClick(e.offsetX, e.offsetY);
+        this.isSelectSequence = true;
+        this.render();
+      } else if (e.button === MouseButton.RIGHT) {
+        this.isSelectSequence = false;
+        this.polygonSelector.resetSVG();
+        this.render();
+      }
       return;
     }
     // Only call event handlers if the click originated from the scatter plot.
@@ -397,8 +442,10 @@ export class ScatterPlot {
     this.mouseIsDown = true;
 
     if (this.selecting) {
-      this.rectangleSelector.onMouseDown(e.offsetX, e.offsetY);
-      this.setNearestPointToMouse(e);
+      if (this.selectionMode === SelectionMode.BOX) {
+        this.rectangleSelector.onMouseDown(e.offsetX, e.offsetY);
+        this.setNearestPointToMouse(e);
+      }
     } else if (
       !e.ctrlKey &&
       this.sceneIs3D() &&
@@ -423,8 +470,10 @@ export class ScatterPlot {
   /** When we stop dragging/zooming, return to normal behavior. */
   private onMouseUp(e: any) {
     if (this.selecting) {
-      this.rectangleSelector.onMouseUp();
-      this.render();
+      if (this.selectionMode === SelectionMode.BOX) {
+        this.rectangleSelector.onMouseUp();
+        this.render();
+      }
     }
     this.mouseIsDown = false;
   }
@@ -437,9 +486,13 @@ export class ScatterPlot {
   private onMouseMove(e: MouseEvent) {
     this.isDragSequence = this.mouseIsDown;
     // Depending if we're selecting or just navigating, handle accordingly.
-    if (this.selecting && this.mouseIsDown) {
-      this.rectangleSelector.onMouseMove(e.offsetX, e.offsetY);
-      this.render();
+    if (this.selecting) {
+      if (this.selectionMode === SelectionMode.BOX && this.mouseIsDown) {
+        this.rectangleSelector.onMouseMove(e.offsetX, e.offsetY);
+        this.render();
+      } else if (this.selectionMode === SelectionMode.POLYGON) {
+        this.polygonSelector.onMouseMove(e.offsetX, e.offsetY);
+      }
     } else if (!this.mouseIsDown) {
       this.setNearestPointToMouse(e);
       if (this.nearestPoint != this.lastHovered) {
@@ -595,8 +648,73 @@ export class ScatterPlot {
     return pointIndices;
   }
 
+  /**
+   * Returns a list of indices of points in a polygon by manually
+   * projecting those points into camera space. This is less efficient than the
+   * picking texture approach, but the picking texture approach has issues with
+   * fully occluded points being left out (for instance when selecting many
+   * points while very zoomed out)
+   *
+   * @param boundingBox The bounding box to select from.
+   */
+  private getPointIndicesFromPolygon(polygon: ScatterPolygonTrace) {
+    if (this.worldSpacePointPositions == null) {
+      return [];
+    }
+    this.camera.updateMatrixWorld();
+
+    const dpr = window.devicePixelRatio || 1;
+    const path = polygon.path.map(p => [
+      Math.floor(p[0] * dpr),
+      Math.floor(p[1] * dpr),
+    ]);
+
+    const canvas = this.renderer.domElement;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    let pointIndices: number[] = [];
+    // Reuse the same Vector3 to avoid unnecessary allocations.
+    const vector3 = new THREE.Vector3();
+    for (let i = 0; i < this.worldSpacePointPositions.length; i++) {
+      const start = i * 3;
+      const [worldX, worldY, worldZ] = this.worldSpacePointPositions.slice(
+        start,
+        start + 3
+      );
+      vector3.x = worldX;
+      vector3.y = worldY;
+      vector3.z = worldZ;
+      const screenVector = vector3.project(this.camera);
+      const x = ((screenVector.x + 1) * canvasWidth) / 2;
+      const y = (-(screenVector.y - 1) * canvasHeight) / 2;
+
+      /** Ray-casting algorithm based on
+       * https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html */
+      let inside = false;
+      const len = path.length;
+      for (let m = 0, n = len - 1; m < len; n = m++) {
+        let xi = path[m][0],
+          yi = path[m][1];
+        let xj = path[n][0],
+          yj = path[n][1];
+        let intersect =
+          yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+        if (intersect) inside = !inside;
+      }
+      if (inside) pointIndices.push(i);
+    }
+
+    return pointIndices;
+  }
+
   private selectBoundingBox(boundingBox: ScatterBoundingBox) {
     let pointIndices = this.getPointIndicesFromBoundingBox(boundingBox);
+    this.selectCallback(pointIndices);
+  }
+
+  private selectPolygonTrace(polygon: ScatterPolygonTrace) {
+    let pointIndices = this.getPointIndicesFromPolygon(polygon);
     this.selectCallback(pointIndices);
   }
 
@@ -651,7 +769,7 @@ export class ScatterPlot {
 
     if (this.dimensions !== dimensions) {
       this.dimensions = dimensions;
-      this.makeCamera();
+      this.makeCamera(this.cameraParams);
     }
   }
 
