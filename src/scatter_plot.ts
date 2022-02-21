@@ -214,6 +214,10 @@ export class ScatterPlot {
     this.container.addEventListener('pointerdown', this.onMouseDown.bind(this));
     this.container.addEventListener('pointerup', this.onMouseUp.bind(this));
     this.container.addEventListener('click', this.onClick.bind(this));
+    this.container.addEventListener(
+      'contextmenu',
+      this.onRightClick.bind(this)
+    );
     window.addEventListener('keydown', this.onKeyDown.bind(this), false);
     window.addEventListener('keyup', this.onKeyUp.bind(this), false);
   }
@@ -413,17 +417,11 @@ export class ScatterPlot {
   private onClick(e: MouseEvent | null, notify = true) {
     if (this.selecting && this.selectionMode === SelectionMode.POLYGON) {
       if (e === null) return;
-      e.preventDefault();
       if (e.button === MouseButton.LEFT) {
         this.polygonSelector.onLeftMouseClick(e.offsetX, e.offsetY);
         this.isSelectSequence = true;
         this.render();
-      } else if (e.button === MouseButton.RIGHT) {
-        this.isSelectSequence = false;
-        this.polygonSelector.resetSVG();
-        this.render();
       }
-      return;
     }
     // Only call event handlers if the click originated from the scatter plot.
     if (!this.isDragSequence && notify) {
@@ -435,6 +433,17 @@ export class ScatterPlot {
     }
     this.isDragSequence = false;
     this.render();
+  }
+
+  private onRightClick(e: MouseEvent | null, notify = true) {
+    e?.preventDefault();
+    if (this.selecting && this.selectionMode === SelectionMode.POLYGON) {
+      this.isSelectSequence = false;
+      this.polygonSelector.onRightMouseClick();
+    }
+    this.isDragSequence = false;
+    this.render();
+    return false;
   }
 
   private onMouseDown(e: MouseEvent) {

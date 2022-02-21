@@ -18,7 +18,6 @@ limitations under the License.
 import {Styles} from './styles';
 
 /** Defines the minimum polygon angle (currently 10 degrees) */
-const MINIMUM_RADIANS = 0.17453;
 const MINIMUM_DISTANCE_TO_CLOSE_POLYGON = 10;
 
 export interface ScatterPolygonTrace {
@@ -32,6 +31,7 @@ export interface ScatterPolygonTrace {
 export class ScatterPlotPolygonSelector {
   private svgElement: SVGElement;
   private polygonElement: SVGPolygonElement;
+  private polygonFinalLineElement: SVGLineElement;
   private polylineElement: SVGPolylineElement;
   private container: HTMLElement;
 
@@ -62,6 +62,10 @@ export class ScatterPlotPolygonSelector {
     this.svgElement.style.height = '100%';
     this.svgElement.style.width = '100%';
     this.svgElement.style.position = 'absolute';
+    this.svgElement.onclick = e => {
+      e.preventDefault();
+      return false;
+    };
 
     container.insertAdjacentElement('afterbegin', this.svgElement);
 
@@ -71,9 +75,11 @@ export class ScatterPlotPolygonSelector {
       'http://www.w3.org/2000/svg',
       'polygon'
     );
-
+    this.polygonElement.onclick = e => {
+      e.preventDefault();
+      return false;
+    };
     this.polygonElement.style.stroke = styles.select.stroke;
-    this.polygonElement.style.strokeDasharray = styles.select.strokeDashArray;
     this.polygonElement.style.strokeWidth = `${styles.select.strokeWidth}`;
     this.polygonElement.style.fill = styles.select.fill;
     this.polygonElement.style.fillOpacity = `${styles.select.fillOpacity}`;
@@ -83,6 +89,10 @@ export class ScatterPlotPolygonSelector {
       'http://www.w3.org/2000/svg',
       'polyline'
     );
+    this.polylineElement.onclick = e => {
+      e.preventDefault();
+      return false;
+    };
     this.polylineElement.style.stroke = styles.select.stroke;
     this.polylineElement.style.strokeDasharray = styles.select.strokeDashArray;
     this.polylineElement.style.strokeWidth = `${styles.select.strokeWidth}`;
@@ -90,25 +100,21 @@ export class ScatterPlotPolygonSelector {
     this.polylineElement.style.fillOpacity = `${styles.select.fillOpacity}`;
     this.svgElement.appendChild(this.polylineElement);
 
+    this.polygonFinalLineElement = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'line'
+    );
+    this.polygonFinalLineElement.style.stroke = styles.backgroundColor;
+    this.polygonFinalLineElement.style.strokeDasharray =
+      styles.select.strokeDashArray;
+    this.polygonFinalLineElement.style.strokeWidth = `${styles.select.strokeWidth}`;
+    this.svgElement.appendChild(this.polygonFinalLineElement);
+
     this.selectionCallback = selectionCallback;
   }
 
-  private calculateCurrentAngle() {
-    if (this.currentPath.path.length < 3) return -1;
-    const p0 = this.currentPath.path[0];
-    const p1 = this.currentPath.path[1];
-    const p2 = this.currentPath.path[this.currentPath.path.length - 1];
-    return Math.abs(
-      Math.atan2(p2[1] - p0[1], p2[0] - p0[0]) -
-        Math.atan2(p1[1] - p0[1], p1[0] - p0[0])
-    );
-  }
-
   isPolygonComplete() {
-    if (this.currentPath.path.length < 3) return false;
-    // Check for minimum angle (not sure if required) //
-    if (this.calculateCurrentAngle() < MINIMUM_RADIANS) return false;
-    return true;
+    return this.currentPath.path.length > 1;
   }
 
   isNearStart(offsetX: number, offsetY: number) {
@@ -139,6 +145,14 @@ export class ScatterPlotPolygonSelector {
     this.renderSVG();
   }
 
+  onRightMouseClick() {
+    if (this.currentPath.path.length === 0) return;
+    if (this.isPolygonComplete()) {
+      this.selectionCallback(this.currentPath);
+    }
+    this.resetSVG();
+  }
+
   onMouseMove(offsetX: number, offsetY: number) {
     if (this.currentPath.path.length === 0) return;
     if (this.isNearStart(offsetX, offsetY))
@@ -162,6 +176,8 @@ export class ScatterPlotPolygonSelector {
       this.polygonElement.setAttribute('points', '');
       this.polylineElement.style.display = 'none';
       this.polylineElement.setAttribute('points', '');
+      this.polygonFinalLineElement.style.display = 'none';
+      this.polygonFinalLineElement.setAttribute('points', '');
       return;
     }
 
@@ -177,6 +193,17 @@ export class ScatterPlotPolygonSelector {
       );
       this.polylineElement.style.display = 'none';
       this.polylineElement.setAttribute('points', '');
+      this.polygonFinalLineElement.style.display = 'block';
+      this.polygonFinalLineElement.setAttribute('x1', `${currentPath[0][0]}`);
+      this.polygonFinalLineElement.setAttribute('y1', `${currentPath[0][1]}`);
+      this.polygonFinalLineElement.setAttribute(
+        'x2',
+        `${currentPath[currentPath.length - 1][0]}`
+      );
+      this.polygonFinalLineElement.setAttribute(
+        'y2',
+        `${currentPath[currentPath.length - 1][1]}`
+      );
     } else {
       this.polygonElement.style.display = 'none';
       this.polygonElement.setAttribute('points', '');
@@ -185,6 +212,8 @@ export class ScatterPlotPolygonSelector {
         'points',
         currentPath.map(([x, y]) => `${x},${y}`).join(' ')
       );
+      this.polygonFinalLineElement.style.display = 'none';
+      this.polygonFinalLineElement.setAttribute('points', '');
     }
   }
 }
