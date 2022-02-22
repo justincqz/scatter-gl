@@ -21,7 +21,6 @@ export type Point3D = [number, number, number];
 
 export const enum InteractionMode {
   PAN = 'PAN',
-  SELECT = 'SELECT',
   BOX = 'BOX',
   POLYGON = 'POLYGON',
 }
