@@ -17,7 +17,7 @@
     "build-lib": "webpack --config ./webpack/lib.config.ts",
     "build-lib-min": "MINIMIZE=true webpack --config ./webpack/lib.config.ts",
     "build-demo": "rm -rf demo_build && webpack --config ./webpack/demo.config.ts",
-    "prepare": "npm run build",
+    "prepare": "npm run build-dist",
     "demo": "webpack-dev-server --config ./webpack/demo.config.ts",
     "deploy-demo": "yarn build-demo && node demo/deploy.js",
     "test": "jest"
@@ -41,7 +41,7 @@
   },
   "prettier": {
     "bracketSpacing": false,
-    "printWidth": 80,
+    "printWidth": 120,
     "semi": true,
     "singleQuote": true,
     "tabWidth": 2,

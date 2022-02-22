@@ -20,25 +20,12 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
 import {CameraType, LabelRenderParams, RenderContext} from './render';
 import {Styles} from './styles';
-import {
-  Optional,
-  Point2D,
-  Point3D,
-  InteractionMode,
-  SelectionMode,
-  MouseButton,
-} from './types';
+import {Optional, Point2D, Point3D, InteractionMode, MouseButton} from './types';
 import * as util from './util';
 
 import {ScatterPlotVisualizer} from './scatter_plot_visualizer';
-import {
-  ScatterBoundingBox,
-  ScatterPlotRectangleSelector,
-} from './scatter_plot_rectangle_selector';
-import {
-  ScatterPolygonTrace,
-  ScatterPlotPolygonSelector,
-} from './scatter_plot_polygon_selector';
+import {ScatterBoundingBox, ScatterPlotRectangleSelector} from './scatter_plot_rectangle_selector';
+import {ScatterPolygonTrace, ScatterPlotPolygonSelector} from './scatter_plot_polygon_selector';
 
 /**
  * The length of the cube (diameter of the circumscribing sphere) where all the
@@ -75,10 +62,7 @@ const DEFAULT_ORBIT_CONTROL_PARAMS: OrbitControlParams = {
   zoomSpeed: 0.125,
 };
 
-export type OnCameraMoveListener = (
-  cameraPosition: THREE.Vector3,
-  cameraTarget: THREE.Vector3
-) => void;
+export type OnCameraMoveListener = (cameraPosition: THREE.Vector3, cameraTarget: THREE.Vector3) => void;
 
 /** Defines a camera, suitable for serialization. */
 export interface CameraDef {
@@ -88,9 +72,7 @@ export interface CameraDef {
   zoom: number;
 }
 
-export type CameraParams = Partial<
-  Pick<CameraDef, 'position' | 'target' | 'zoom'>
->;
+export type CameraParams = Partial<Pick<CameraDef, 'position' | 'target' | 'zoom'>>;
 
 export interface ScatterPlotParams {
   camera?: CameraParams;
@@ -126,7 +108,6 @@ export class ScatterPlot {
   private dimensions = 3;
 
   private interactionMode = InteractionMode.PAN;
-  private selectionMode = SelectionMode.POLYGON;
 
   private renderer: THREE.WebGLRenderer;
 
@@ -214,10 +195,7 @@ export class ScatterPlot {
     this.container.addEventListener('pointerdown', this.onMouseDown.bind(this));
     this.container.addEventListener('pointerup', this.onMouseUp.bind(this));
     this.container.addEventListener('click', this.onClick.bind(this));
-    this.container.addEventListener(
-      'contextmenu',
-      this.onRightClick.bind(this)
-    );
+    this.container.addEventListener('contextmenu', this.onRightClick.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this), false);
     window.addEventListener('keyup', this.onKeyUp.bind(this), false);
   }
@@ -227,9 +205,7 @@ export class ScatterPlot {
     // controls.
     cameraControls.addEventListener('start', () => {
       this.stopOrbitAnimation();
-      this.onCameraMoveListeners.forEach(l =>
-        l(this.camera.position, cameraControls.target)
-      );
+      this.onCameraMoveListeners.forEach(l => l(this.camera.position, cameraControls.target));
     });
 
     // Change is called everytime the user interacts with the controls.f
@@ -290,16 +266,8 @@ export class ScatterPlot {
         PERSP_CAMERA_NEAR_CLIP_PLANE,
         PERSP_CAMERA_FAR_CLIP_PLANE
       );
-      camera.position.set(
-        cameraDef.position[0],
-        cameraDef.position[1],
-        cameraDef.position[2]
-      );
-      const at = new THREE.Vector3(
-        cameraDef.target[0],
-        cameraDef.target[1],
-        cameraDef.target[2]
-      );
+      camera.position.set(cameraDef.position[0], cameraDef.position[1], cameraDef.position[2]);
+      const at = new THREE.Vector3(cameraDef.target[0], cameraDef.target[1], cameraDef.target[2]);
       camera.lookAt(at);
       camera.zoom = cameraDef.zoom;
       camera.updateProjectionMatrix();
@@ -310,11 +278,7 @@ export class ScatterPlot {
 
   private makeCamera2D(cameraDef: CameraDef, w: number, h: number) {
     let camera: THREE.OrthographicCamera;
-    const target = new THREE.Vector3(
-      cameraDef.target[0],
-      cameraDef.target[1],
-      cameraDef.target[2]
-    );
+    const target = new THREE.Vector3(cameraDef.target[0], cameraDef.target[1], cameraDef.target[2]);
     {
       const aspectRatio = w / h;
       let left = -ORTHO_CAMERA_FRUSTUM_HALF_EXTENT;
@@ -329,19 +293,8 @@ export class ScatterPlot {
         top /= aspectRatio;
         bottom /= aspectRatio;
       }
-      camera = new THREE.OrthographicCamera(
-        left,
-        right,
-        top,
-        bottom,
-        -1000,
-        1000
-      );
-      camera.position.set(
-        cameraDef.position[0],
-        cameraDef.position[1],
-        cameraDef.position[2]
-      );
+      camera = new THREE.OrthographicCamera(left, right, top, bottom, -1000, 1000);
+      camera.position.set(cameraDef.position[0], cameraDef.position[1], cameraDef.position[2]);
       // The orbit controls pan up operation is tied to the z dimension
       camera.up = new THREE.Vector3(0, 0, 1);
       camera.lookAt(target);
@@ -352,15 +305,10 @@ export class ScatterPlot {
     this.makeOrbitControls(camera, false);
   }
 
-  private makeDefaultCameraDef(
-    dimensions: number,
-    cameraParams: CameraParams = {}
-  ): CameraDef {
+  private makeDefaultCameraDef(dimensions: number, cameraParams: CameraParams = {}): CameraDef {
     const orthographic = dimensions === 2;
     const position = orthographic ? START_CAMERA_POS_2D : START_CAMERA_POS_3D;
-    const target = orthographic
-      ? START_CAMERA_TARGET_2D
-      : START_CAMERA_TARGET_3D;
+    const target = orthographic ? START_CAMERA_TARGET_2D : START_CAMERA_TARGET_3D;
     const def: CameraDef = {
       orthographic,
       zoom: 1.0,
@@ -390,57 +338,62 @@ export class ScatterPlot {
     }
   }
 
-  setInteractionMode(
-    interactionMode: InteractionMode,
-    selectionMode?: SelectionMode
-  ) {
+  setInteractionMode(interactionMode: InteractionMode) {
     this.interactionMode = interactionMode;
 
     /** Resets the Polygon Selector UI */
     this.isSelectSequence = false;
+    this.isDragSequence = false;
     this.polygonSelector.resetSVG();
 
-    if (interactionMode === InteractionMode.SELECT) {
-      this.selecting = true;
-      this.container.style.cursor = 'crosshair';
-      this.orbitCameraControls.enabled = false;
-      if (selectionMode) {
-        this.selectionMode = selectionMode;
-      }
-    } else {
-      this.selecting = false;
+    /** Sets the cursor based on the interaction mode (select vs pan) */
+    if (interactionMode === InteractionMode.PAN) {
+      this.selectEnabled = false;
       this.container.style.cursor = 'default';
       this.orbitCameraControls.enabled = true;
+    } else {
+      this.selectEnabled = true;
+      this.container.style.cursor = 'crosshair';
+      this.orbitCameraControls.enabled = false;
     }
   }
 
   private onClick(e: MouseEvent | null, notify = true) {
-    if (this.selecting && this.selectionMode === SelectionMode.POLYGON) {
+    /** Handle on-click events for different selectors */
+
+    if (this.selectEnabled) {
       if (e === null) return;
-      if (e.button === MouseButton.LEFT) {
-        this.polygonSelector.onLeftMouseClick(e.offsetX, e.offsetY);
-        this.isSelectSequence = true;
-        this.render();
+      switch (this.interactionMode) {
+        case InteractionMode.POLYGON:
+          this.polygonSelector.onLeftMouseClick(e.offsetX, e.offsetY);
+          this.isSelectSequence = true;
+          break;
+        default:
+          if (!this.isDragSequence && notify) {
+            this.selectCallback(this.nearestPoint != null ? [this.nearestPoint] : []);
+            this.clickCallback(this.nearestPoint);
+          }
+          break;
       }
-    }
-    // Only call event handlers if the click originated from the scatter plot.
-    if (!this.isDragSequence && notify) {
-      if (this.selectEnabled) {
-        const selected = this.nearestPoint != null ? [this.nearestPoint] : [];
-        this.selectCallback(selected);
-      }
-      this.clickCallback(this.nearestPoint);
+    } else {
+      if (notify) this.clickCallback(this.nearestPoint);
     }
     this.isDragSequence = false;
     this.render();
   }
 
   private onRightClick(e: MouseEvent | null, notify = true) {
-    e?.preventDefault();
-    if (this.selecting && this.selectionMode === SelectionMode.POLYGON) {
-      this.isSelectSequence = false;
-      this.polygonSelector.onRightMouseClick();
+    if (this.selectEnabled) {
+      switch (this.interactionMode) {
+        case InteractionMode.POLYGON:
+          this.isSelectSequence = false;
+          this.polygonSelector.onRightMouseClick();
+          break;
+        default:
+          break;
+      }
     }
+    e?.preventDefault();
     this.isDragSequence = false;
     this.render();
     return false;
@@ -450,26 +403,22 @@ export class ScatterPlot {
     this.isDragSequence = false;
     this.mouseIsDown = true;
 
-    if (this.selecting) {
-      if (this.selectionMode === SelectionMode.BOX) {
-        this.rectangleSelector.onMouseDown(e.offsetX, e.offsetY);
-        this.setNearestPointToMouse(e);
+    /** Set mouse pan depending on interaction mode */
+    if (this.selectEnabled) {
+      switch (this.interactionMode) {
+        case InteractionMode.BOX:
+          this.rectangleSelector.onMouseDown(e.offsetX, e.offsetY);
+          this.setNearestPointToMouse(e);
+        default:
+          break;
       }
-    } else if (
-      !e.ctrlKey &&
-      this.sceneIs3D() &&
-      this.orbitCameraControls.mouseButtons.ORBIT === THREE.MOUSE.RIGHT
-    ) {
+    } else if (!e.ctrlKey && this.sceneIs3D() && this.orbitCameraControls.mouseButtons.ORBIT === THREE.MOUSE.RIGHT) {
       // The user happened to press the ctrl key when the tab was active,
       // unpressed the ctrl when the tab was inactive, and now he/she
       // is back to the projector tab.
       this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.LEFT;
       this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.RIGHT;
-    } else if (
-      e.ctrlKey &&
-      this.sceneIs3D() &&
-      this.orbitCameraControls.mouseButtons.ORBIT === THREE.MOUSE.LEFT
-    ) {
+    } else if (e.ctrlKey && this.sceneIs3D() && this.orbitCameraControls.mouseButtons.ORBIT === THREE.MOUSE.LEFT) {
       // Similarly to the situation above.
       this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.RIGHT;
       this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.LEFT;
@@ -478,10 +427,14 @@ export class ScatterPlot {
 
   /** When we stop dragging/zooming, return to normal behavior. */
   private onMouseUp(e: any) {
-    if (this.selecting) {
-      if (this.selectionMode === SelectionMode.BOX) {
-        this.rectangleSelector.onMouseUp();
-        this.render();
+    if (this.selectEnabled) {
+      switch (this.interactionMode) {
+        case InteractionMode.BOX:
+          this.rectangleSelector.onMouseUp();
+          this.render();
+          break;
+        default:
+          break;
       }
     }
     this.mouseIsDown = false;
@@ -494,53 +447,58 @@ export class ScatterPlot {
    */
   private onMouseMove(e: MouseEvent) {
     this.isDragSequence = this.mouseIsDown;
-    // Depending if we're selecting or just navigating, handle accordingly.
-    if (this.selecting) {
-      if (this.selectionMode === SelectionMode.BOX && this.mouseIsDown) {
-        this.rectangleSelector.onMouseMove(e.offsetX, e.offsetY);
-        this.render();
-      } else if (this.selectionMode === SelectionMode.POLYGON) {
-        this.polygonSelector.onMouseMove(e.offsetX, e.offsetY);
+
+    if (this.selectEnabled) {
+      switch (this.interactionMode) {
+        case InteractionMode.BOX:
+          if (this.mouseIsDown) this.rectangleSelector.onMouseMove(e.offsetX, e.offsetY);
+          break;
+        case InteractionMode.POLYGON:
+          this.polygonSelector.onMouseMove(e.offsetX, e.offsetY);
+          break;
+        default:
+          break;
       }
-    } else if (!this.mouseIsDown) {
+    }
+    // Depending if we're selecting or just navigating, handle accordingly.
+    if (!this.mouseIsDown) {
       this.setNearestPointToMouse(e);
       if (this.nearestPoint != this.lastHovered) {
         this.lastHovered = this.nearestPoint;
         this.hoverCallback(this.nearestPoint);
       }
+      return;
     }
   }
 
   /** For using ctrl + left click as right click, and for circle select */
   private onKeyDown(e: KeyboardEvent) {
-    // If ctrl is pressed, use left click to orbit
-    if (e.key === CTRL_KEY && this.sceneIs3D()) {
-      this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.RIGHT;
-      this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.LEFT;
-    }
-
-    // If shift is pressed, start selecting
-    if (e.key === SHIFT_KEY && this.selectEnabled) {
-      this.selecting = true;
-      this.orbitCameraControls.enabled = false;
-      this.container.style.cursor = 'crosshair';
-    }
+    // // If ctrl is pressed, use left click to orbit
+    // if (e.key === CTRL_KEY && this.sceneIs3D()) {
+    //   this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.RIGHT;
+    //   this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.LEFT;
+    // }
+    // // If shift is pressed, start selecting
+    // if (e.key === SHIFT_KEY && this.selectEnabled) {
+    //   this.selecting = true;
+    //   this.orbitCameraControls.enabled = false;
+    //   this.container.style.cursor = 'crosshair';
+    // }
   }
 
   /** For using ctrl + left click as right click, and for circle select */
   private onKeyUp(e: KeyboardEvent) {
-    if (e.key === CTRL_KEY && this.sceneIs3D()) {
-      this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.LEFT;
-      this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.RIGHT;
-    }
-
-    // If shift is released, stop selecting
-    if (e.key === SHIFT_KEY && this.selectEnabled) {
-      this.selecting = false;
-      this.orbitCameraControls.enabled = true;
-      this.container.style.cursor = 'default';
-      this.render();
-    }
+    // if (e.key === CTRL_KEY && this.sceneIs3D()) {
+    //   this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.LEFT;
+    //   this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.RIGHT;
+    // }
+    // // If shift is released, stop selecting
+    // if (e.key === SHIFT_KEY && this.selectEnabled) {
+    //   this.selecting = false;
+    //   this.orbitCameraControls.enabled = true;
+    //   this.container.style.cursor = 'default';
+    //   this.render();
+    // }
   }
 
   /**
@@ -580,10 +538,7 @@ export class ScatterPlot {
     const vector3 = new THREE.Vector3();
     for (let i = 0; i < this.worldSpacePointPositions.length; i++) {
       const start = i * 3;
-      const [worldX, worldY, worldZ] = this.worldSpacePointPositions.slice(
-        start,
-        start + 3
-      );
+      const [worldX, worldY, worldZ] = this.worldSpacePointPositions.slice(start, start + 3);
       vector3.x = worldX;
       vector3.y = worldY;
       vector3.z = worldZ;
@@ -606,9 +561,7 @@ export class ScatterPlot {
    * texture.
    * @param boundingBox The bounding box to select from.
    */
-  private getPointIndicesFromBoundingBoxPickingTexture(
-    boundingBox: ScatterBoundingBox
-  ): number[] {
+  private getPointIndicesFromBoundingBoxPickingTexture(boundingBox: ScatterBoundingBox): number[] {
     if (this.worldSpacePointPositions == null) {
       return [];
     }
@@ -635,14 +588,9 @@ export class ScatterPlot {
 
     // Keep a flat list of each point and whether they are selected or not. This
     // approach is more efficient than using an object keyed by the index.
-    let pointIndicesSelection = new Uint8Array(
-      this.worldSpacePointPositions.length
-    );
+    let pointIndicesSelection = new Uint8Array(this.worldSpacePointPositions.length);
     for (let i = 0; i < width * height; i++) {
-      const id =
-        (pixelBuffer[i * 4] << 16) |
-        (pixelBuffer[i * 4 + 1] << 8) |
-        pixelBuffer[i * 4 + 2];
+      const id = (pixelBuffer[i * 4] << 16) | (pixelBuffer[i * 4 + 1] << 8) | pixelBuffer[i * 4 + 2];
       if (id !== 0xffffff && id < pointCount) {
         pointIndicesSelection[id] = 1;
       }
@@ -673,10 +621,7 @@ export class ScatterPlot {
     this.camera.updateMatrixWorld();
 
     const dpr = window.devicePixelRatio || 1;
-    const path = polygon.path.map(p => [
-      Math.floor(p[0] * dpr),
-      Math.floor(p[1] * dpr),
-    ]);
+    const path = polygon.path.map(p => [Math.floor(p[0] * dpr), Math.floor(p[1] * dpr)]);
 
     const canvas = this.renderer.domElement;
     const canvasWidth = canvas.width;
@@ -687,10 +632,7 @@ export class ScatterPlot {
     const vector3 = new THREE.Vector3();
     for (let i = 0; i < this.worldSpacePointPositions.length; i++) {
       const start = i * 3;
-      const [worldX, worldY, worldZ] = this.worldSpacePointPositions.slice(
-        start,
-        start + 3
-      );
+      const [worldX, worldY, worldZ] = this.worldSpacePointPositions.slice(start, start + 3);
       vector3.x = worldX;
       vector3.y = worldY;
       vector3.z = worldZ;
@@ -707,8 +649,7 @@ export class ScatterPlot {
           yi = path[m][1];
         let xj = path[n][0],
           yj = path[n][1];
-        let intersect =
-          yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+        let intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
         if (intersect) inside = !inside;
       }
       if (inside) pointIndices.push(i);
@@ -740,9 +681,7 @@ export class ScatterPlot {
       height: 1,
     };
 
-    const pointIndices = this.getPointIndicesFromBoundingBoxPickingTexture(
-      boundingBox
-    );
+    const pointIndices = this.getPointIndicesFromBoundingBoxPickingTexture(boundingBox);
     this.nearestPoint = pointIndices.length ? pointIndices[0] : null;
   }
 
@@ -822,9 +761,7 @@ export class ScatterPlot {
 
   private updateOrbitAnimation() {
     this.orbitCameraControls.update();
-    this.orbitAnimationId = requestAnimationFrame(() =>
-      this.updateOrbitAnimation()
-    );
+    this.orbitAnimationId = requestAnimationFrame(() => this.updateOrbitAnimation());
   }
 
   /** Stops the orbiting animation on the camera. */
@@ -865,9 +802,7 @@ export class ScatterPlot {
   /** Update scatter plot with a new array of packed xyz point positions. */
   setPointPositions(worldSpacePointPositions: Float32Array) {
     this.worldSpacePointPositions = worldSpacePointPositions;
-    this.visualizers.forEach(v =>
-      v.onPointPositionsChanged(worldSpacePointPositions)
-    );
+    this.visualizers.forEach(v => v.onPointPositionsChanged(worldSpacePointPositions));
   }
 
   render() {
@@ -879,9 +814,7 @@ export class ScatterPlot {
     }
 
     const cameraType =
-      this.camera instanceof THREE.PerspectiveCamera
-        ? CameraType.Perspective
-        : CameraType.Orthographic;
+      this.camera instanceof THREE.PerspectiveCamera ? CameraType.Perspective : CameraType.Orthographic;
 
     let cameraSpacePointExtents: [number, number] = [0, 0];
     if (this.worldSpacePointPositions != null) {

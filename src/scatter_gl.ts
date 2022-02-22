@@ -15,12 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-import {
-  ScatterPlot,
-  CameraParams,
-  OnCameraMoveListener,
-  OrbitControlParams,
-} from './scatter_plot';
+import {ScatterPlot, CameraParams, OnCameraMoveListener, OrbitControlParams} from './scatter_plot';
 import {parseColor} from './color';
 import {Dataset, Sequence} from './data';
 import {LabelRenderParams} from './render';
@@ -35,11 +30,7 @@ import {ScatterPlotVisualizerSprites} from './scatter_plot_visualizer_sprites';
 import {ScatterPlotVisualizerCanvasLabels} from './scatter_plot_visualizer_canvas_labels';
 import {ScatterPlotVisualizerPolylines} from './scatter_plot_visualizer_polylines';
 
-export type PointColorer = (
-  index: number,
-  selectedIndices: Set<number>,
-  hoverIndex: number | null
-) => string;
+export type PointColorer = (index: number, selectedIndices: Set<number>, hoverIndex: number | null) => string;
 
 export interface ScatterGLParams {
   camera?: CameraParams;
@@ -116,8 +107,7 @@ export class ScatterGL {
     if (p.renderMode !== undefined) this.renderMode = p.renderMode;
     if (p.rotateOnStart !== undefined) this.rotateOnStart = p.rotateOnStart;
     if (p.selectEnabled !== undefined) this.selectEnabled = p.selectEnabled;
-    if (p.showLabelsOnHover !== undefined)
-      this.showLabelsOnHover = p.showLabelsOnHover;
+    if (p.showLabelsOnHover !== undefined) this.showLabelsOnHover = p.showLabelsOnHover;
   }
 
   render(dataset: Dataset) {
@@ -174,18 +164,13 @@ export class ScatterGL {
     this.renderScatterPlot();
   }
 
-  setPanMode() {
-    this.scatterPlot.setInteractionMode(InteractionMode.PAN);
-  }
-
-  setSelectMode() {
-    this.scatterPlot.setInteractionMode(InteractionMode.SELECT);
+  setInteractionMode(interaction: InteractionMode) {
+    this.scatterPlot.setInteractionMode(interaction);
   }
 
   setDimensions(nDimensions: number) {
     const outsideRange = nDimensions < 2 || nDimensions > 3;
-    const moreThanDataset =
-      this.dataset && nDimensions > this.dataset.dimensions;
+    const moreThanDataset = this.dataset && nDimensions > this.dataset.dimensions;
     if (outsideRange || moreThanDataset) {
       throw new RangeError('Setting invalid dimensionality');
     } else {
@@ -322,10 +307,7 @@ export class ScatterGL {
     const maxRange = Math.max(xRange, yRange, zRange);
 
     const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
-    const makeScaleRange = (range: number, base: number) => [
-      -base * (range / maxRange),
-      base * (range / maxRange),
-    ];
+    const makeScaleRange = (range: number, base: number) => [-base * (range / maxRange), base * (range / maxRange)];
     const xScale = makeScaleRange(xRange, halfCube);
     const yScale = makeScaleRange(yRange, halfCube);
     const zScale = makeScaleRange(zRange, halfCube);
@@ -370,32 +352,16 @@ export class ScatterGL {
       scale[dst] = styles.label.scaleLarge;
       opacityFlags[dst] = 0;
       const fillRgb = util.styleRgbFromHexColor(styles.label.fillColorHover);
-      util.packRgbIntoUint8Array(
-        fillColors,
-        dst,
-        fillRgb[0],
-        fillRgb[1],
-        fillRgb[2]
-      );
-      const strokeRgb = util.styleRgbFromHexColor(
-        styles.label.strokeColorHover
-      );
-      util.packRgbIntoUint8Array(
-        strokeColors,
-        dst,
-        strokeRgb[0],
-        strokeRgb[1],
-        strokeRgb[1]
-      );
+      util.packRgbIntoUint8Array(fillColors, dst, fillRgb[0], fillRgb[1], fillRgb[2]);
+      const strokeRgb = util.styleRgbFromHexColor(styles.label.strokeColorHover);
+      util.packRgbIntoUint8Array(strokeColors, dst, strokeRgb[0], strokeRgb[1], strokeRgb[1]);
       ++dst;
     }
 
     // Selected points
     {
       const fillRgb = util.styleRgbFromHexColor(styles.label.fillColorSelected);
-      const strokeRgb = util.styleRgbFromHexColor(
-        styles.label.strokeColorSelected
-      );
+      const strokeRgb = util.styleRgbFromHexColor(styles.label.strokeColorSelected);
 
       if (selectedPointIndices.size === 1) {
         const labelIndex = [...selectedPointIndices][0];
@@ -403,20 +369,8 @@ export class ScatterGL {
         visibleLabels[dst] = labelIndex;
         scale[dst] = styles.label.scaleLarge;
         opacityFlags[dst] = 0;
-        util.packRgbIntoUint8Array(
-          fillColors,
-          dst,
-          fillRgb[0],
-          fillRgb[1],
-          fillRgb[2]
-        );
-        util.packRgbIntoUint8Array(
-          strokeColors,
-          dst,
-          strokeRgb[0],
-          strokeRgb[1],
-          strokeRgb[2]
-        );
+        util.packRgbIntoUint8Array(fillColors, dst, fillRgb[0], fillRgb[1], fillRgb[2]);
+        util.packRgbIntoUint8Array(strokeColors, dst, strokeRgb[0], strokeRgb[1], strokeRgb[2]);
       }
     }
 
@@ -459,12 +413,7 @@ export class ScatterGL {
   private generatePointColorArray(dataset: Dataset): Float32Array {
     const {hoverPointIndex, pointColorer, selectedPointIndices, styles} = this;
 
-    const {
-      colorHover,
-      colorNoSelection,
-      colorSelected,
-      colorUnselected,
-    } = styles.point;
+    const {colorHover, colorNoSelection, colorSelected, colorUnselected} = styles.point;
 
     const colors = new Float32Array(dataset.points.length * RGBA_NUM_ELEMENTS);
 
@@ -488,9 +437,7 @@ export class ScatterGL {
     if (pointColorer) {
       let dst = 0;
       for (let i = 0; i < n; ++i) {
-        const c = parseColor(
-          this.callPointColorer(pointColorer, i) || noSelectionColor
-        );
+        const c = parseColor(this.callPointColorer(pointColorer, i) || noSelectionColor);
 
         colors[dst++] = c.r;
         colors[dst++] = c.g;
@@ -503,10 +450,7 @@ export class ScatterGL {
     else {
       // First color all unselected / non-selected points
       let dst = 0;
-      let c =
-        selectedPointCount > 0
-          ? parseColor(unselectedColor)
-          : parseColor(noSelectionColor);
+      let c = selectedPointCount > 0 ? parseColor(unselectedColor) : parseColor(noSelectionColor);
       for (let i = 0; i < n; ++i) {
         colors[dst++] = c.r;
         colors[dst++] = c.g;
@@ -565,12 +509,8 @@ export class ScatterGL {
 
       if (pointColorer) {
         for (let j = 0; j < sequence.indices.length - 1; j++) {
-          const c1 = parseColor(
-            this.callPointColorer(pointColorer, sequence.indices[j])
-          );
-          const c2 = parseColor(
-            this.callPointColorer(pointColorer, sequence.indices[j + 1])
-          );
+          const c1 = parseColor(this.callPointColorer(pointColorer, sequence.indices[j]));
+          const c2 = parseColor(this.callPointColorer(pointColorer, sequence.indices[j + 1]));
           colors[colorIndex++] = c1.r;
           colors[colorIndex++] = c1.g;
           colors[colorIndex++] = c1.b;
@@ -618,9 +558,7 @@ export class ScatterGL {
     const selectedPointCount = selectedPointIndices.size;
     if (selectedPointCount > 0) {
       opacities.fill(styles.polyline.deselectedOpacity);
-      const i = this.polylineVisualizer!.getPointSequenceIndex(
-        [...selectedPointIndices][0]
-      );
+      const i = this.polylineVisualizer!.getPointSequenceIndex([...selectedPointIndices][0]);
       if (i !== undefined) opacities[i] = styles.polyline.selectedOpacity;
     } else {
       opacities.fill(styles.polyline.defaultOpacity);
@@ -635,9 +573,7 @@ export class ScatterGL {
     widths.fill(styles.polyline.defaultLineWidth);
     const selectedPointCount = selectedPointIndices.size;
     if (selectedPointCount > 0) {
-      const i = this.polylineVisualizer!.getPointSequenceIndex(
-        [...selectedPointIndices][0]
-      );
+      const i = this.polylineVisualizer!.getPointSequenceIndex([...selectedPointIndices][0]);
       if (i !== undefined) widths[i] = styles.polyline.selectedLineWidth;
     }
     return widths;
@@ -652,10 +588,7 @@ export class ScatterGL {
 
   private initializeCanvasLabelsVisualizer() {
     if (!this.canvasLabelsVisualizer) {
-      this.canvasLabelsVisualizer = new ScatterPlotVisualizerCanvasLabels(
-        this.containerElement!,
-        this.styles
-      );
+      this.canvasLabelsVisualizer = new ScatterPlotVisualizerCanvasLabels(this.containerElement!, this.styles);
     }
     return this.canvasLabelsVisualizer;
   }
@@ -739,8 +672,7 @@ export class ScatterGL {
       activeVisualizers.push(visualizer);
     }
 
-    const textLabelsRenderMode =
-      renderMode === RenderMode.POINT || renderMode === RenderMode.SPRITE;
+    const textLabelsRenderMode = renderMode === RenderMode.POINT || renderMode === RenderMode.SPRITE;
     if (textLabelsRenderMode && this.showLabelsOnHover) {
       const visualizer = this.initializeCanvasLabelsVisualizer();
       activeVisualizers.push(visualizer);

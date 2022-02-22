@@ -48,15 +48,8 @@ export class ScatterPlotPolygonSelector {
    *     mouseUp.
    * @param styles The styles object.
    */
-  constructor(
-    container: HTMLElement,
-    selectionCallback: (path: ScatterPolygonTrace) => void,
-    styles: Styles
-  ) {
-    this.svgElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'svg'
-    );
+  constructor(container: HTMLElement, selectionCallback: (path: ScatterPolygonTrace) => void, styles: Styles) {
+    this.svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.container = container;
     this.svgElement.style.display = 'none';
     this.svgElement.style.height = '100%';
@@ -71,10 +64,7 @@ export class ScatterPlotPolygonSelector {
 
     // Prepare a polygon and polyline element, which will render based on if
     // the polygon is completable or not
-    this.polygonElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'polygon'
-    );
+    this.polygonElement = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
     this.polygonElement.onclick = e => {
       e.preventDefault();
       return false;
@@ -85,10 +75,7 @@ export class ScatterPlotPolygonSelector {
     this.polygonElement.style.fillOpacity = `${styles.select.fillOpacity}`;
     this.svgElement.appendChild(this.polygonElement);
 
-    this.polylineElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'polyline'
-    );
+    this.polylineElement = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
     this.polylineElement.onclick = e => {
       e.preventDefault();
       return false;
@@ -100,13 +87,9 @@ export class ScatterPlotPolygonSelector {
     this.polylineElement.style.fillOpacity = `${styles.select.fillOpacity}`;
     this.svgElement.appendChild(this.polylineElement);
 
-    this.polygonFinalLineElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'line'
-    );
+    this.polygonFinalLineElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     this.polygonFinalLineElement.style.stroke = styles.backgroundColor;
-    this.polygonFinalLineElement.style.strokeDasharray =
-      styles.select.strokeDashArray;
+    this.polygonFinalLineElement.style.strokeDasharray = styles.select.strokeDashArray;
     this.polygonFinalLineElement.style.strokeWidth = `${styles.select.strokeWidth}`;
     this.svgElement.appendChild(this.polygonFinalLineElement);
 
@@ -155,10 +138,9 @@ export class ScatterPlotPolygonSelector {
 
   onMouseMove(offsetX: number, offsetY: number) {
     if (this.currentPath.path.length === 0) return;
-    if (this.isNearStart(offsetX, offsetY))
-      this.container.style.cursor = 'pointer';
+    if (this.isNearStart(offsetX, offsetY)) this.container.style.cursor = 'pointer';
     else this.container.style.cursor = 'crosshair';
-    this.renderSVG([offsetX, offsetY]);
+    this.renderSVG([offsetX, offsetY], this.isNearStart(offsetX, offsetY));
   }
 
   resetSVG() {
@@ -169,7 +151,7 @@ export class ScatterPlotPolygonSelector {
   }
 
   /** TODO: Dotted lines for hover */
-  renderSVG(hoverPoint?: [number, number]) {
+  renderSVG(hoverPoint?: [number, number], fullPolygon?: boolean) {
     if (this.currentPath.path.length === 0) {
       this.svgElement.style.display = 'none';
       this.polygonElement.style.display = 'none';
@@ -182,36 +164,27 @@ export class ScatterPlotPolygonSelector {
     }
 
     this.svgElement.style.display = 'block';
-    const currentPath = hoverPoint
-      ? [...this.currentPath.path, hoverPoint]
-      : this.currentPath.path;
+    const currentPath = hoverPoint && !fullPolygon ? [...this.currentPath.path, hoverPoint] : this.currentPath.path;
     if (this.isPolygonComplete()) {
       this.polygonElement.style.display = 'block';
-      this.polygonElement.setAttribute(
-        'points',
-        currentPath.map(([x, y]) => `${x},${y}`).join(' ')
-      );
+      this.polygonElement.setAttribute('points', currentPath.map(([x, y]) => `${x},${y}`).join(' '));
       this.polylineElement.style.display = 'none';
       this.polylineElement.setAttribute('points', '');
-      this.polygonFinalLineElement.style.display = 'block';
-      this.polygonFinalLineElement.setAttribute('x1', `${currentPath[0][0]}`);
-      this.polygonFinalLineElement.setAttribute('y1', `${currentPath[0][1]}`);
-      this.polygonFinalLineElement.setAttribute(
-        'x2',
-        `${currentPath[currentPath.length - 1][0]}`
-      );
-      this.polygonFinalLineElement.setAttribute(
-        'y2',
-        `${currentPath[currentPath.length - 1][1]}`
-      );
+      if (!fullPolygon) {
+        this.polygonFinalLineElement.style.display = 'block';
+        this.polygonFinalLineElement.setAttribute('x1', `${currentPath[0][0]}`);
+        this.polygonFinalLineElement.setAttribute('y1', `${currentPath[0][1]}`);
+        this.polygonFinalLineElement.setAttribute('x2', `${currentPath[currentPath.length - 1][0]}`);
+        this.polygonFinalLineElement.setAttribute('y2', `${currentPath[currentPath.length - 1][1]}`);
+      } else {
+        this.polygonFinalLineElement.style.display = 'none';
+        this.polygonFinalLineElement.setAttribute('points', '');
+      }
     } else {
       this.polygonElement.style.display = 'none';
       this.polygonElement.setAttribute('points', '');
       this.polylineElement.style.display = 'block';
-      this.polylineElement.setAttribute(
-        'points',
-        currentPath.map(([x, y]) => `${x},${y}`).join(' ')
-      );
+      this.polylineElement.setAttribute('points', currentPath.map(([x, y]) => `${x},${y}`).join(' '));
       this.polygonFinalLineElement.style.display = 'none';
       this.polygonFinalLineElement.setAttribute('points', '');
     }

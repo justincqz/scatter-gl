@@ -18,7 +18,7 @@ limitations under the License.
 import {data} from './data/projection';
 import {Point3D, Dataset, PointMetadata} from '../src/data';
 import {makeSequences} from './sequences';
-import {ScatterGL, RenderMode} from '../src';
+import {ScatterGL, RenderMode, InteractionMode} from '../src';
 /** SAFEHTML */
 
 const dataPoints: Point3D[] = [];
@@ -86,88 +86,80 @@ window.addEventListener('resize', () => {
   scatterGL.resize();
 });
 
-document
-  .querySelectorAll<HTMLInputElement>('input[name="interactions"]')
-  .forEach(inputElement => {
-    inputElement.addEventListener('change', () => {
-      if (inputElement.value === 'pan') {
-        scatterGL.setPanMode();
-      } else if (inputElement.value === 'select') {
-        scatterGL.setSelectMode();
-      }
-    });
+document.querySelectorAll<HTMLInputElement>('input[name="interactions"]').forEach(inputElement => {
+  inputElement.addEventListener('change', () => {
+    switch (inputElement.value) {
+      case 'pan':
+        scatterGL.setInteractionMode(InteractionMode.PAN);
+        break;
+      case 'box':
+        scatterGL.setInteractionMode(InteractionMode.BOX);
+        break;
+      case 'polygon':
+        scatterGL.setInteractionMode(InteractionMode.POLYGON);
+        break;
+      default:
+        break;
+    }
   });
+});
 
-document
-  .querySelectorAll<HTMLInputElement>('input[name="render"]')
-  .forEach(inputElement => {
-    inputElement.addEventListener('change', () => {
-      renderMode = inputElement.value;
-      if (inputElement.value === 'points') {
-        scatterGL.setPointRenderMode();
-      } else if (inputElement.value === 'sprites') {
-        scatterGL.setSpriteRenderMode();
-      } else if (inputElement.value === 'text') {
-        scatterGL.setTextRenderMode();
-      }
-    });
+document.querySelectorAll<HTMLInputElement>('input[name="render"]').forEach(inputElement => {
+  inputElement.addEventListener('change', () => {
+    renderMode = inputElement.value;
+    if (inputElement.value === 'points') {
+      scatterGL.setPointRenderMode();
+    } else if (inputElement.value === 'sprites') {
+      scatterGL.setSpriteRenderMode();
+    } else if (inputElement.value === 'text') {
+      scatterGL.setTextRenderMode();
+    }
   });
+});
 
 const hues = [...new Array(10)].map((_, i) => Math.floor((255 / 10) * i));
 
-const lightTransparentColorsByLabel = hues.map(
-  hue => `hsla(${hue}, 100%, 50%, 0.05)`
-);
-const heavyTransparentColorsByLabel = hues.map(
-  hue => `hsla(${hue}, 100%, 50%, 0.75)`
-);
+const lightTransparentColorsByLabel = hues.map(hue => `hsla(${hue}, 100%, 50%, 0.05)`);
+const heavyTransparentColorsByLabel = hues.map(hue => `hsla(${hue}, 100%, 50%, 0.75)`);
 const opaqueColorsByLabel = hues.map(hue => `hsla(${hue}, 100%, 50%, 1)`);
 
-document
-  .querySelectorAll<HTMLInputElement>('input[name="color"]')
-  .forEach(inputElement => {
-    inputElement.addEventListener('change', () => {
-      if (inputElement.value === 'default') {
-        scatterGL.setPointColorer(null);
-      } else if (inputElement.value === 'label') {
-        scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
-          const labelIndex = dataset.metadata![i]['labelIndex'] as number;
-          const opaque = renderMode !== 'points';
-          if (opaque) {
-            return opaqueColorsByLabel[labelIndex];
-          } else {
-            if (hoverIndex === i) {
-              return 'red';
-            }
-
-            // If nothing is selected, return the heavy color
-            if (selectedIndices.size === 0) {
-              return heavyTransparentColorsByLabel[labelIndex];
-            }
-            // Otherwise, keep the selected points heavy and non-selected light
-            else {
-              const isSelected = selectedIndices.has(i);
-              return isSelected
-                ? heavyTransparentColorsByLabel[labelIndex]
-                : lightTransparentColorsByLabel[labelIndex];
-            }
+document.querySelectorAll<HTMLInputElement>('input[name="color"]').forEach(inputElement => {
+  inputElement.addEventListener('change', () => {
+    if (inputElement.value === 'default') {
+      scatterGL.setPointColorer(null);
+    } else if (inputElement.value === 'label') {
+      scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
+        const labelIndex = dataset.metadata![i]['labelIndex'] as number;
+        const opaque = renderMode !== 'points';
+        if (opaque) {
+          return opaqueColorsByLabel[labelIndex];
+        } else {
+          if (hoverIndex === i) {
+            return 'red';
           }
-        });
-      }
-    });
-  });
 
-const dimensionsToggle = document.querySelector<HTMLInputElement>(
-  'input[name="3D"]'
-)!;
+          // If nothing is selected, return the heavy color
+          if (selectedIndices.size === 0) {
+            return heavyTransparentColorsByLabel[labelIndex];
+          }
+          // Otherwise, keep the selected points heavy and non-selected light
+          else {
+            const isSelected = selectedIndices.has(i);
+            return isSelected ? heavyTransparentColorsByLabel[labelIndex] : lightTransparentColorsByLabel[labelIndex];
+          }
+        }
+      });
+    }
+  });
+});
+
+const dimensionsToggle = document.querySelector<HTMLInputElement>('input[name="3D"]')!;
 dimensionsToggle.addEventListener('change', (e: any) => {
   const is3D = dimensionsToggle.checked;
   scatterGL.setDimensions(is3D ? 3 : 2);
 });
 
-const sequencesToggle = document.querySelector<HTMLInputElement>(
-  'input[name="sequences"]'
-)!;
+const sequencesToggle = document.querySelector<HTMLInputElement>('input[name="sequences"]')!;
 sequencesToggle.addEventListener('change', (e: any) => {
   const showSequences = sequencesToggle.checked;
   scatterGL.setSequences(showSequences ? sequences : []);
