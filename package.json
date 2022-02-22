@@ -1,13 +1,12 @@
 {
   "name": "scatter-gl",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "webgl accelerated 3D/2D scatterplot renderer",
   "author": {
-    "name": "Andy Coenen",
-    "email": "andycoenen@google.com"
+    "name": "Justin Chong",
+    "email": "justincqz@gmail.com"
   },
   "license": "Apache-2.0",
-  "repository": "PAIR-code/scatter-gl",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "unpkg": "lib/scatter-gl.min.js",
@@ -18,6 +17,7 @@
     "build-lib": "webpack --config ./webpack/lib.config.ts",
     "build-lib-min": "MINIMIZE=true webpack --config ./webpack/lib.config.ts",
     "build-demo": "rm -rf demo_build && webpack --config ./webpack/demo.config.ts",
+    "prepare": "npm run build",
     "demo": "webpack-dev-server --config ./webpack/demo.config.ts",
     "deploy-demo": "yarn build-demo && node demo/deploy.js",
     "test": "jest"
@@ -47,7 +47,15 @@
     "tabWidth": 2,
     "trailingComma": "es5"
   },
+  "files": [
+    "dist/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justincqz/scatter-gl.git"
+  },
   "publishConfig": {
-    "registry": "https://wombat-dressing-room.appspot.com"
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
   }
 }
