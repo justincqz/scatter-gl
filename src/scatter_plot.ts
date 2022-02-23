@@ -412,16 +412,6 @@ export class ScatterPlot {
         default:
           break;
       }
-    } else if (!e.ctrlKey && this.sceneIs3D() && this.orbitCameraControls.mouseButtons.ORBIT === THREE.MOUSE.RIGHT) {
-      // The user happened to press the ctrl key when the tab was active,
-      // unpressed the ctrl when the tab was inactive, and now he/she
-      // is back to the projector tab.
-      this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.LEFT;
-      this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.RIGHT;
-    } else if (e.ctrlKey && this.sceneIs3D() && this.orbitCameraControls.mouseButtons.ORBIT === THREE.MOUSE.LEFT) {
-      // Similarly to the situation above.
-      this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.RIGHT;
-      this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.LEFT;
     }
   }
 
@@ -472,34 +462,10 @@ export class ScatterPlot {
   }
 
   /** For using ctrl + left click as right click, and for circle select */
-  private onKeyDown(e: KeyboardEvent) {
-    // // If ctrl is pressed, use left click to orbit
-    // if (e.key === CTRL_KEY && this.sceneIs3D()) {
-    //   this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.RIGHT;
-    //   this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.LEFT;
-    // }
-    // // If shift is pressed, start selecting
-    // if (e.key === SHIFT_KEY && this.selectEnabled) {
-    //   this.selecting = true;
-    //   this.orbitCameraControls.enabled = false;
-    //   this.container.style.cursor = 'crosshair';
-    // }
-  }
+  private onKeyDown(e: KeyboardEvent) {}
 
   /** For using ctrl + left click as right click, and for circle select */
-  private onKeyUp(e: KeyboardEvent) {
-    // if (e.key === CTRL_KEY && this.sceneIs3D()) {
-    //   this.orbitCameraControls.mouseButtons.ORBIT = THREE.MOUSE.LEFT;
-    //   this.orbitCameraControls.mouseButtons.PAN = THREE.MOUSE.RIGHT;
-    // }
-    // // If shift is released, stop selecting
-    // if (e.key === SHIFT_KEY && this.selectEnabled) {
-    //   this.selecting = false;
-    //   this.orbitCameraControls.enabled = true;
-    //   this.container.style.cursor = 'default';
-    //   this.render();
-    // }
-  }
+  private onKeyUp(e: KeyboardEvent) {}
 
   /**
    * Returns a list of indices of points in a bounding box by manually
