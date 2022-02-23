@@ -1,6 +1,6 @@
 {
   "name": "scatter-gl",
-  "version": "0.0.14",
+  "version": "0.0.16",
   "description": "webgl accelerated 3D/2D scatterplot renderer",
   "author": {
     "name": "Justin Chong",
@@ -23,7 +23,7 @@
     "test": "jest",
     "husky-install": "husky install",
     "postinstall": "npm run husky-install",
-    "post-commit": "npm --no-git-tag-version version patch -f"
+    "precommit": "npm --no-git-tag-version version patch -f && git add package*"
   },
   "devDependencies": {
     "@types/jest": "^24.0.3",
