@@ -245,6 +245,11 @@ export class ScatterPlot {
     this.addCameraControlsEventListeners(this.orbitCameraControls);
   }
 
+  enableCameraPan(enabled: Boolean) {
+    this.orbitCameraControls.enablePan = enabled;
+    this.orbitCameraControls.enableRotate = enabled;
+  }
+
   private makeCamera(cameraParams: CameraParams = {}) {
     const def = this.makeDefaultCameraDef(this.dimensions, cameraParams);
     this.recreateCamera(def);
@@ -350,11 +355,11 @@ export class ScatterPlot {
     if (interactionMode === InteractionMode.PAN) {
       this.selectEnabled = false;
       this.container.style.cursor = 'default';
-      this.orbitCameraControls.enabled = true;
+      this.enableCameraPan(true);
     } else {
       this.selectEnabled = true;
       this.container.style.cursor = 'crosshair';
-      this.orbitCameraControls.enabled = false;
+      this.enableCameraPan(false);
     }
   }
 

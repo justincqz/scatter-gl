@@ -1,6 +1,6 @@
 {
   "name": "scatter-gl",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "webgl accelerated 3D/2D scatterplot renderer",
   "author": {
     "name": "Justin Chong",
