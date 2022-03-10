@@ -47,15 +47,8 @@ export class ScatterPlotRectangleSelector {
    *     mouseUp.
    * @param styles The styles object.
    */
-  constructor(
-    container: HTMLElement,
-    selectionCallback: (boundingBox: ScatterBoundingBox) => void,
-    styles: Styles
-  ) {
-    this.svgElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'svg'
-    );
+  constructor(container: HTMLElement, selectionCallback: (boundingBox: ScatterBoundingBox) => void, styles: Styles) {
+    this.svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.svgElement.style.display = 'none';
     this.svgElement.style.height = '100%';
     this.svgElement.style.width = '100%';
@@ -63,10 +56,7 @@ export class ScatterPlotRectangleSelector {
 
     container.insertAdjacentElement('afterbegin', this.svgElement);
 
-    this.rectElement = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'rect'
-    );
+    this.rectElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
     this.rectElement.style.stroke = styles.select.stroke;
     this.rectElement.style.strokeDasharray = styles.select.strokeDashArray;
@@ -99,21 +89,17 @@ export class ScatterPlotRectangleSelector {
 
     this.lastBoundingBox.x = Math.min(offsetX, this.startCoordinates[0]);
     this.lastBoundingBox.y = Math.max(offsetY, this.startCoordinates[1]);
-    this.lastBoundingBox.width =
-      Math.max(offsetX, this.startCoordinates[0]) - this.lastBoundingBox.x;
-    this.lastBoundingBox.height =
-      this.lastBoundingBox.y - Math.min(offsetY, this.startCoordinates[1]);
+    this.lastBoundingBox.width = Math.max(offsetX, this.startCoordinates[0]) - this.lastBoundingBox.x;
+    this.lastBoundingBox.height = this.lastBoundingBox.y - Math.min(offsetY, this.startCoordinates[1]);
 
     this.rectElement.setAttribute('x', '' + this.lastBoundingBox.x);
-    this.rectElement.setAttribute(
-      'y',
-      '' + (this.lastBoundingBox.y - this.lastBoundingBox.height)
-    );
+    this.rectElement.setAttribute('y', '' + (this.lastBoundingBox.y - this.lastBoundingBox.height));
     this.rectElement.setAttribute('width', '' + this.lastBoundingBox.width);
     this.rectElement.setAttribute('height', '' + this.lastBoundingBox.height);
   }
 
   onMouseUp() {
+    if (!this.isMouseDown) return;
     this.isMouseDown = false;
     this.svgElement.style.display = 'none';
     this.rectElement.style.display = 'none';

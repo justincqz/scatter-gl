@@ -131,7 +131,7 @@ export class ScatterPlot {
   private cameraParams: CameraParams = {};
   private selecting = false;
   private nearestPoint: number | null = null;
-  private mouseIsDown = false;
+  private mouseIsDown: THREE.MOUSE | null = null;
   private isDragSequence = false;
   private isSelectSequence = false;
   private rectangleSelector: ScatterPlotRectangleSelector;
@@ -247,7 +247,18 @@ export class ScatterPlot {
 
   enableCameraPan(enabled: Boolean) {
     this.orbitCameraControls.enablePan = enabled;
-    this.orbitCameraControls.enableRotate = enabled;
+  }
+
+  enableAlternatePan(enabled: Boolean) {
+    if (enabled) {
+      this.orbitCameraControls.enableRotate = false;
+      this.orbitCameraControls.mouseButtons.RIGHT = THREE.MOUSE.RIGHT; // Pan
+      this.orbitCameraControls.mouseButtons.LEFT = THREE.MOUSE.LEFT; // Orbit
+    } else {
+      this.orbitCameraControls.enableRotate = this.dimensions === 3;
+      this.orbitCameraControls.mouseButtons.RIGHT = THREE.MOUSE.LEFT; // Pan
+      this.orbitCameraControls.mouseButtons.LEFT = THREE.MOUSE.RIGHT; // Orbit
+    }
   }
 
   private makeCamera(cameraParams: CameraParams = {}) {
@@ -355,11 +366,11 @@ export class ScatterPlot {
     if (interactionMode === InteractionMode.PAN) {
       this.selectEnabled = false;
       this.container.style.cursor = 'default';
-      this.enableCameraPan(true);
+      this.enableAlternatePan(false);
     } else {
       this.selectEnabled = true;
       this.container.style.cursor = 'crosshair';
-      this.enableCameraPan(false);
+      this.enableAlternatePan(true);
     }
   }
 
@@ -406,14 +417,16 @@ export class ScatterPlot {
 
   private onMouseDown(e: MouseEvent) {
     this.isDragSequence = false;
-    this.mouseIsDown = true;
+    this.mouseIsDown = e.button === THREE.MOUSE.LEFT ? THREE.MOUSE.LEFT : THREE.MOUSE.RIGHT;
 
     /** Set mouse pan depending on interaction mode */
     if (this.selectEnabled) {
       switch (this.interactionMode) {
         case InteractionMode.BOX:
-          this.rectangleSelector.onMouseDown(e.offsetX, e.offsetY);
-          this.setNearestPointToMouse(e);
+          if (e.button === THREE.MOUSE.LEFT) {
+            this.rectangleSelector.onMouseDown(e.offsetX, e.offsetY);
+            this.setNearestPointToMouse(e);
+          }
         default:
           break;
       }
@@ -432,7 +445,7 @@ export class ScatterPlot {
           break;
       }
     }
-    this.mouseIsDown = false;
+    this.mouseIsDown = null;
   }
 
   private lastHovered: number | null = null;
@@ -441,12 +454,12 @@ export class ScatterPlot {
    * hoverlisteners (usually called from embedding.ts)
    */
   private onMouseMove(e: MouseEvent) {
-    this.isDragSequence = this.mouseIsDown;
+    this.isDragSequence = this.mouseIsDown === THREE.MOUSE.LEFT;
 
     if (this.selectEnabled) {
       switch (this.interactionMode) {
         case InteractionMode.BOX:
-          if (this.mouseIsDown) this.rectangleSelector.onMouseMove(e.offsetX, e.offsetY);
+          if (this.isDragSequence) this.rectangleSelector.onMouseMove(e.offsetX, e.offsetY);
           break;
         case InteractionMode.POLYGON:
           this.polygonSelector.onMouseMove(e.offsetX, e.offsetY);
@@ -689,6 +702,7 @@ export class ScatterPlot {
     if (this.dimensions !== dimensions) {
       this.dimensions = dimensions;
       this.makeCamera(this.cameraParams);
+      if (this.interactionMode !== InteractionMode.PAN) this.enableAlternatePan(true);
     }
   }
 
